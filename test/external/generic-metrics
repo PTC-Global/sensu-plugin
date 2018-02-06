@@ -2,7 +2,7 @@
 
 require 'sensu-plugin/metric/cli'
 
-class TestMetric < Sensu::Plugin::Metric::CLI
+class TestMetric < Sensu::Plugin::Metric::CLI::Generic
   def run
     output metric_name: 'metric.name'
     output metric_name: 'metric.name', value: 50
