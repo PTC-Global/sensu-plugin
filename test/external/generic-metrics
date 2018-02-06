@@ -1,0 +1,28 @@
+#!/usr/bin/env ruby
+
+require 'sensu-plugin/metric/cli'
+
+class TestMetric < Sensu::Plugin::Metric::CLI
+  def run
+    output metric_name: 'metric.name'
+    output metric_name: 'metric.name', value: 50
+    output metric_name: 'metric.name', value: 50,
+           tags: { env: 'prod', location: 'us-midwest' }
+    output metric_name: 'metric.name', value: 50,
+           graphite_metric_path: 'graphite.metric.path'
+    output metric_name: 'metric.name', value: 50,
+           statsd_metric_name: 'statsd.metric.name',
+           statsd_type: 's'
+    output metric_name: 'metric.name', value: 50,
+           dogstatsd_metric_name: 'statsd.metric.name',
+           dogstatsd_type: 'm'
+    output metric_name: 'metric.name', value: 50,
+           statsd_metric_name: 'statsd.metric.name',
+           dogstatsd_metric_name: 'dogstatsd.metric.name'
+    output metric_name: 'metric.name', value: 50,
+           influxdb_measurement: 'influxdb.measurement'
+    output metric_name: 'metric.name', value: 50,
+           influxdb_fields: 'influxdb.fields=60'
+    ok
+  end
+end

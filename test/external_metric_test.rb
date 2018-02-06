@@ -81,3 +81,16 @@ class TestInfluxdbMetricExternal < MiniTest::Test
     end
   end
 end
+
+class TestGenericMetricsExternal < MiniTest::Test
+  include SensuPluginTestHelper
+
+  def setup
+    set_script 'external/generic-metrics'
+  end
+
+  def test_grafana
+    lines = run_script.split("\n")
+    assert lines.size == 9
+  end
+end

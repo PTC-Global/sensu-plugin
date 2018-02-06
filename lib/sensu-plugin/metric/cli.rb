@@ -4,7 +4,7 @@ require 'json'
 module Sensu
   module Plugin
     class Metric
-      class CLI
+      class CLI < Sensu::Plugin::CLI
         class JSON < Sensu::Plugin::CLI
           def output(obj = nil)
             if obj.is_a?(String) || obj.is_a?(Exception)
@@ -102,6 +102,68 @@ module Sensu
               ts = args[3] || Time.now.to_i
               puts [measurement, fields, ts].join(' ')
             end
+          end
+        end
+
+        # hack to prevent mixlib conflict when calling JSON.output
+        class J < JSON
+          def parse_options(*arv)
+          end
+        end
+
+        option :metric_format,
+               short: '-f METRIC_FORMAT',
+               long: '--metric_format METRIC_FORMAT',
+               in: ['json', 'graphite', 'statsd', 'dogstatsd', 'influxdb'],
+               show_options: true,
+               default: 'graphite'
+
+        def output(metric = {})
+          # metric_name
+          # value=nil
+          # tags={}
+          # timestamp=Time.now.to_i
+          # graphite_metric_path="#{metric}"
+          # statsd_metric_name="#{metric}"
+          # statsd_type=nil
+          # influxdb_measurement="#{metric}"
+          # influxdb_fields="#{value}"
+          # json_obj
+          tags = metric[:tags] || []
+
+          case config[:metric_format]
+          when 'json'
+            json_obj = metric[:json_obj] || {
+              metric_name: metric[:metric_name],
+              value: metric[:value],
+              timestamp: metric[:timestamp],
+              tags: tags
+            }
+            J.new.output json_obj
+          when 'graphite'
+            graphite_metric_path = metric[:graphite_metric_path] ||
+                                   metric[:metric_name]
+            Graphite.new.output graphite_metric_path, metric[:value], metric[:timestamp]
+          when 'statsd'
+            statsd_metric_name = metric[:statsd_metric_name] ||
+                                 metric[:metric_name]
+            Statsd.new.output statsd_metric_name, metric[:value], metric[:statsd_type]
+          when 'dogstatsd'
+            dogstatsd_metric_name = metric[:dogstatsd_metric_name] ||
+                                    metric[:statsd_metric_name] ||
+                                    metric[:metric_name]
+            dogstatsd_type = metric[:dogstatsd_type] || metric[:statsd_type]
+            dogstatsd_tags = tags.map { |k, v| "#{k}:#{v}" }.join(',')
+            Dogstatsd.new.output dogstatsd_metric_name, metric[:value],
+                                 dogstatsd_type, dogstatsd_tags
+          when 'influxdb'
+            influxdb_measurement = metric[:influxdb_measurement] ||
+                                   metric[:metric_name]
+            influxdb_fields = metric[:influxdb_fields] ||
+                              metric[:value]
+            influxdb_tags = tags.map { |k, v| "#{k}=#{v}" }.join(',')
+            Influxdb.new.output influxdb_measurement, influxdb_fields,
+                                influxdb_tags, metric[:timestamp]
           end
         end
       end
